@@ -2,10 +2,14 @@ from datetime import datetime
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
 from resources.download import (get_case_datafile_url, download_case_file,
                                 decompress_case_file, upload_file_to_s3)
+
+conf = {
+    'bucket_name': 'udacity-dend-capstone-lostkamp',
+    's3_prefix_case': 'case_data'
+}
 
 
 default_args = {
@@ -14,12 +18,6 @@ default_args = {
     'email_on_failure': False,
     'start_date': datetime(2022, 3, 1)
 }
-
-
-def mytest():
-    s3 = S3Hook(aws_conn_id='aws_credentials')
-    print(s3.list_prefixes(bucket_name='udacity-dend-capstone-lostkamp'))
-
 
 with DAG(dag_id='get_source_data',
          description='Download newest case and vaccination data and push it to Redshift',
@@ -42,8 +40,8 @@ with DAG(dag_id='get_source_data',
         python_callable=decompress_case_file
     )
     upload_case_file_to_s3_task = PythonOperator(
-        task_id='upload_file_to_s3_task',
-        python_callable=mytest
+        task_id='upload_case_file_to_s3_task',
+        python_callable=upload_file_to_s3
     )
 
 get_case_url_task >> download_case_file_task >> decompress_case_file_task >> upload_case_file_to_s3_task

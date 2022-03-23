@@ -2,6 +2,9 @@ import os
 from urllib.request import urlretrieve
 import lzma
 import shutil
+import logging
+
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
 
 REPO_URL = 'https://storage.googleapis.com/brdata-public-data/rki-corona-archiv/2_parsed/index.html'
@@ -9,7 +12,7 @@ REPO_URL = 'https://storage.googleapis.com/brdata-public-data/rki-corona-archiv/
 
 def get_case_datafile_url(ds):
     from bs4 import BeautifulSoup
-    print('Templated date:', ds)
+    logging.info(f'Getting data URL for: {ds}')
     urlretrieve(REPO_URL, 'index.html')
     with open('index.html', 'r') as f:
         soup = BeautifulSoup(f, 'html.parser')
@@ -37,11 +40,13 @@ def download_case_file(ti):
 def decompress_case_file(ti):
     filename_in = ti.xcom_pull(task_ids='download_case_file_task')
     filename_out = os.path.splitext(filename_in)[0]
-    with lzma.open(filename_in, 'rb') as fin, open(filename_out, "wb") as fout:
+    with lzma.open(filename_in, 'rb') as fin, open(filename_out, 'wb') as fout:
         shutil.copyfileobj(fin, fout)
-
     return filename_out
 
 
-def upload_file_to_s3(ti):
-    print('Filename:', ti.xcom_pull(task_ids='decompress_case_file_task'))
+def upload_file_to_s3(ti, s3_prefix, bucket_name):
+    local_fname = ti.xcom_pull(task_ids='decompress_case_file_task')
+    s3 = S3Hook(aws_conn_id='aws_credentials', region_name='eu-west-1')
+    s3_key = os.path.join(s3_prefix, local_fname)
+    s3.load_file(local_fname, key=s3_key, bucket_name=bucket_name)
