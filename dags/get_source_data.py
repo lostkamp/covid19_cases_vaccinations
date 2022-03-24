@@ -2,13 +2,17 @@ from datetime import datetime
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.bash import BashOperator
 
 from resources.download import (get_case_datafile_url, download_case_file,
                                 decompress_case_file, upload_file_to_s3)
 
 conf = {
+    'repo_url_case': 'https://storage.googleapis.com/brdata-public-data/rki-corona-archiv/2_parsed/index.html',  # NOQA
+    'repo_url_vaccinations': '',
     'bucket_name': 'udacity-dend-capstone-lostkamp',
-    's3_prefix_case': 'case_data'
+    's3_prefix_case': 'case_data',
+    's3_prefix_vaccinations': 'vaccination_data'
 }
 
 
@@ -29,7 +33,8 @@ with DAG(dag_id='get_source_data',
 
     get_case_url_task = PythonOperator(
         task_id='get_case_url_task',
-        python_callable=get_case_datafile_url
+        python_callable=get_case_datafile_url,
+        op_kwargs={'repo_url': conf['repo_url_case']}
     )
     download_case_file_task = PythonOperator(
         task_id='download_case_file_task',
@@ -41,7 +46,10 @@ with DAG(dag_id='get_source_data',
     )
     upload_case_file_to_s3_task = PythonOperator(
         task_id='upload_case_file_to_s3_task',
-        python_callable=upload_file_to_s3
+        python_callable=upload_file_to_s3,
+        op_kwargs={'s3_prefix': conf['s3_prefix_case'],
+                   'bucket_name': conf['bucket_name']}
     )
+
 
 get_case_url_task >> download_case_file_task >> decompress_case_file_task >> upload_case_file_to_s3_task
