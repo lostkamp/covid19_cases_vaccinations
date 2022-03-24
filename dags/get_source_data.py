@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 from airflow import DAG
@@ -24,7 +25,7 @@ default_args = {
     'start_date': datetime(2022, 3, 1)
 }
 
-with DAG(dag_id='get_source_data',
+with DAG(dag_id='get_source_data_v2',
          description='Download newest case and vaccination data and push it to Redshift',
          default_args=default_args,
          schedule_interval=None,
@@ -57,8 +58,13 @@ with DAG(dag_id='get_source_data',
     filename = conf['filename_template_vaccinations'].format(DATE=date)
     download_vaccination_file_task = BashOperator(
         task_id='download_vaccination_file_task',
-        bash_command='curl -L $URL > $LOCAL_FNAME && echo $LOCAL_FNAME | cut -d "?" -f 1',
-        env={'URL': conf['repo_url_vaccinations'] + filename,
+        bash_command="""
+        cd "$FOLDER";
+        curl -L $URL > $LOCAL_FNAME;
+        echo $LOCAL_FNAME;
+        """,
+        env={'FOLDER': os.getcwd(),
+             'URL': conf['repo_url_vaccinations'] + filename + '?raw=true',
              'LOCAL_FNAME': filename}
     )
     upload_vaccination_file_to_s3_task = PythonOperator(

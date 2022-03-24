@@ -55,6 +55,8 @@ def decompress_case_file(ti, delete_compressed_file=True):
 def upload_file_to_s3(ti, s3_prefix, bucket_name, delete_local_file=True):
     local_fname = ti.xcom_pull(task_ids=['decompress_case_file_task',
                                          'download_vaccination_file_task'])
+    logging.info(f'XComs: {local_fname}')
+    local_fname = list(filter(lambda x: x is not None, local_fname))[0]
     logging.info(f'Local filename: {local_fname}')
     s3 = S3Hook(aws_conn_id='aws_credentials', region_name='eu-west-1')
     s3_key = os.path.join(s3_prefix, local_fname)
