@@ -52,17 +52,24 @@ def decompress_case_file(ti, date, delete_compressed_file=True):
     return filename_out
 
 
-def upload_file_to_s3(ti, s3_prefix, bucket_name, delete_local_file=True):
-    xcom_list = ti.xcom_pull(task_ids=['decompress_case_file',
-                                       'download_vaccination_file'])
-    logging.info(f'XComs: {xcom_list}')
-    local_fname = list(filter(lambda x: x is not None, xcom_list))[0]
-    logging.info(f'Local filename: {local_fname}')
+def upload_file_to_s3(ti, s3_prefix, bucket_name,
+                      xcom_task_id=None,
+                      local_filename=None,
+                      delete_local_file=True):
+    if xcom_task_id is None and local_filename is None:
+        raise ValueError('Must specify either `xcom_task_id` or `local_filename`.')
+    if local_filename is not None:
+        logging.info(f'Using provided filename: {local_filename}')
+    else:
+        logging.info('Loading filename from XCom...')
+        local_filename = ti.xcom_pull(task_ids=xcom_task_id)
+        logging.info(f'Loaded filename: {local_filename}')
+
     s3 = S3Hook(aws_conn_id='aws_credentials', region_name='eu-west-1')
-    s3_key = os.path.join(s3_prefix, local_fname)
+    s3_key = os.path.join(s3_prefix, local_filename)
     logging.info(f'Uploading to S3 path: s3://{bucket_name}/{s3_key}')
-    s3.load_file(local_fname, key=s3_key, bucket_name=bucket_name)
+    s3.load_file(local_filename, key=s3_key, bucket_name=bucket_name, replace=True)
     logging.info('Upload complete.')
     if delete_local_file:
-        logging.info(f'Deleting local file: {os.path.join(os.getcwd(), local_fname)}')
-        Path(local_fname).unlink()
+        logging.info(f'Deleting local file: {os.path.join(os.getcwd(), local_filename)}')
+        Path(local_filename).unlink()

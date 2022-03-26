@@ -55,7 +55,8 @@ with DAG(dag_id='get_source_data_v2',
         task_id='upload_case_file_to_s3',
         python_callable=upload_file_to_s3,
         op_kwargs={'s3_prefix': conf['s3_prefix_case'],
-                   'bucket_name': conf['bucket_name']}
+                   'bucket_name': conf['bucket_name'],
+                   'xcom_task_id': 'decompress_case_file'}
     )
     filename = conf['filename_template_vaccinations'].format(DATE=date)
     download_vaccination_file_task = BashOperator(
@@ -73,7 +74,8 @@ with DAG(dag_id='get_source_data_v2',
         task_id='upload_vaccination_file_to_s3',
         python_callable=upload_file_to_s3,
         op_kwargs={'s3_prefix': conf['s3_prefix_vaccinations'],
-                   'bucket_name': conf['bucket_name']}
+                   'bucket_name': conf['bucket_name'],
+                   'xcom_task_id': 'download_vaccination_file'}
     )
     load_staging_cases_task = S3ToRedshiftOperator(
         task_id='load_staging_cases',
