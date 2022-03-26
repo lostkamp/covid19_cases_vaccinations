@@ -5,10 +5,11 @@ import shutil
 import logging
 from pathlib import Path
 
+from airflow.models import TaskInstance
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
 
-def get_case_datafile_url(date, repo_url):
+def get_case_datafile_url(date: str, repo_url: str) -> str:
     from bs4 import BeautifulSoup
     logging.info(f'Getting data URL for: {date}')
     urlretrieve(repo_url, 'index.html')
@@ -31,7 +32,7 @@ def get_case_datafile_url(date, repo_url):
     return result
 
 
-def download_case_file(ti):
+def download_case_file(ti: TaskInstance) -> str:
     url = ti.xcom_pull(task_ids='get_case_url_task')
     local_fname = os.path.split(url)[-1]
     logging.info(f'Downloading: {url}')
@@ -40,7 +41,9 @@ def download_case_file(ti):
     return local_fname
 
 
-def decompress_case_file(ti, date, delete_compressed_file=True):
+def decompress_case_file(ti: TaskInstance,
+                         date: str,
+                         delete_compressed_file: bool = True) -> str:
     filename_in = ti.xcom_pull(task_ids='download_case_file_task')
     filename_out = f'{date}.ndjson'
     with lzma.open(filename_in, 'rb') as fin, open(filename_out, 'wb') as fout:
@@ -52,10 +55,10 @@ def decompress_case_file(ti, date, delete_compressed_file=True):
     return filename_out
 
 
-def upload_file_to_s3(ti, s3_prefix, bucket_name,
-                      xcom_task_id=None,
-                      local_filename=None,
-                      delete_local_file=True):
+def upload_file_to_s3(ti: TaskInstance, s3_prefix: str, bucket_name: str,
+                      xcom_task_id: str = None,
+                      local_filename: str = None,
+                      delete_local_file: bool = True) -> None:
     if xcom_task_id is None and local_filename is None:
         raise ValueError('Must specify either `xcom_task_id` or `local_filename`.')
     if local_filename is not None:

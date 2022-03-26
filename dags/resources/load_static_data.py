@@ -19,8 +19,8 @@ state_dict = {
 }
 
 
-def preprocess_county_data(filepath_in='static_data/04-kreise.xlsx',
-                           filepath_out='counties.csv'):
+def preprocess_county_data(filepath_in: str = 'static_data/04-kreise.xlsx',
+                           filepath_out: str = 'counties.csv') -> str:
     import pandas as pd
     colnames = ['county_id', 'type', 'name', 'nuts3', 'area_sqare_km', 'pop_total',
                 'pop_male', 'pop_female', 'pop_per_square_km']
@@ -33,5 +33,6 @@ def preprocess_county_data(filepath_in='static_data/04-kreise.xlsx',
                                 'pop_female': int,
                                 'pop_per_square_km': int})
     counties['state'] = counties['county_id'].apply(lambda s: s[:2]).map(state_dict)
+    # TODO: subset columns?
     counties.to_csv(filepath_out, index=False)
     return filepath_out
