@@ -54,7 +54,7 @@ def decompress_case_file(ti, date, delete_compressed_file=True):
 
 def upload_file_to_s3(ti, s3_prefix, bucket_name, delete_local_file=True):
     xcom_list = ti.xcom_pull(task_ids=['decompress_case_file',
-                                         'download_vaccination_file'])
+                                       'download_vaccination_file'])
     logging.info(f'XComs: {xcom_list}')
     local_fname = list(filter(lambda x: x is not None, xcom_list))[0]
     logging.info(f'Local filename: {local_fname}')
