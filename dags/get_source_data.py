@@ -4,6 +4,7 @@ from datetime import datetime
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
+from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 
 from resources.download import (get_case_datafile_url, download_case_file,
                                 decompress_case_file, upload_file_to_s3)
@@ -74,7 +75,32 @@ with DAG(dag_id='get_source_data_v2',
         op_kwargs={'s3_prefix': conf['s3_prefix_vaccinations'],
                    'bucket_name': conf['bucket_name']}
     )
+    load_staging_cases_task = S3ToRedshiftOperator(
+        task_id='load_staging_cases',
+        s3_bucket=conf['bucket_name'],
+        s3_key=f'{conf["s3_prefix_case"]}/{date}.ndjson',
+        redshift_conn_id='redshift',
+        aws_conn_id='aws_credentials',
+        schema='PUBLIC',
+        table='staging_cases',
+        copy_options=["json 'auto ignorecase'"],
+        method='REPLACE',
+    )
+    load_staging_vaccinations_task = S3ToRedshiftOperator(
+        task_id='load_staging_vaccinations',
+        s3_bucket=conf['bucket_name'],
+        s3_key=f'{conf["s3_prefix_vaccinations"]}/{date}.csv',
+        redshift_conn_id='redshift',
+        aws_conn_id='aws_credentials',
+        schema='PUBLIC',
+        table='staging_vaccinations',
+        copy_options=['IGNOREHEADER 1', "delimiter ','"],
+        method='REPLACE',
+    )
 
 
 get_case_url_task >> download_case_file_task >> decompress_case_file_task >> upload_case_file_to_s3_task
 download_vaccination_file_task >> upload_vaccination_file_to_s3_task
+
+upload_case_file_to_s3_task >> load_staging_cases_task
+upload_vaccination_file_to_s3_task >> load_staging_vaccinations_task
