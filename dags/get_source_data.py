@@ -11,7 +11,7 @@ from resources.download import (get_case_datafile_url, download_case_file,
 conf = {
     'repo_url_case': 'https://storage.googleapis.com/brdata-public-data/rki-corona-archiv/2_parsed/index.html',  # NOQA
     'repo_url_vaccinations': 'https://github.com/robert-koch-institut/COVID-19-Impfungen_in_Deutschland/tree/master/Archiv/',
-    'filename_template_vaccinations': '{DATE}_Deutschland_Landkreise_COVID-19-Impfungen.csv?raw=true',
+    'filename_template_vaccinations': '{DATE}_Deutschland_Landkreise_COVID-19-Impfungen.csv',
     'bucket_name': 'udacity-dend-capstone-lostkamp',
     's3_prefix_case': 'case_data',
     's3_prefix_vaccinations': 'vaccination_data'
@@ -33,7 +33,7 @@ with DAG(dag_id='get_source_data_v2',
          concurrency=15,
          catchup=False) as dag:
 
-    date = '2021-07-23'
+    date = '2021-07-24'
 
     get_case_url_task = PythonOperator(
         task_id='get_case_url_task',
@@ -47,7 +47,8 @@ with DAG(dag_id='get_source_data_v2',
     )
     decompress_case_file_task = PythonOperator(
         task_id='decompress_case_file_task',
-        python_callable=decompress_case_file
+        python_callable=decompress_case_file,
+        op_kwargs={'date': date}
     )
     upload_case_file_to_s3_task = PythonOperator(
         task_id='upload_case_file_to_s3_task',
@@ -57,7 +58,7 @@ with DAG(dag_id='get_source_data_v2',
     )
     filename = conf['filename_template_vaccinations'].format(DATE=date)
     download_vaccination_file_task = BashOperator(
-        task_id='download_vaccination_file_task',
+        task_id='download_vaccination_file',
         bash_command="""
         cd "$FOLDER";
         curl -L $URL > $LOCAL_FNAME;
@@ -65,10 +66,10 @@ with DAG(dag_id='get_source_data_v2',
         """,
         env={'FOLDER': os.getcwd(),
              'URL': conf['repo_url_vaccinations'] + filename + '?raw=true',
-             'LOCAL_FNAME': filename}
+             'LOCAL_FNAME': f'{date}.csv'}
     )
     upload_vaccination_file_to_s3_task = PythonOperator(
-        task_id='upload_vaccination_file_to_s3_task',
+        task_id='upload_vaccination_file_to_s3',
         python_callable=upload_file_to_s3,
         op_kwargs={'s3_prefix': conf['s3_prefix_vaccinations'],
                    'bucket_name': conf['bucket_name']}
