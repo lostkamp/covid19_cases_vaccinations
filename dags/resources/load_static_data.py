@@ -19,7 +19,8 @@ state_dict = {
 }
 
 
-def preprocess_county_data(filepath_in='04-kreise.xlsx', filepath_out='counties.csv'):
+def preprocess_county_data(filepath_in='static_data/04-kreise.xlsx',
+                           filepath_out='counties.csv'):
     import pandas as pd
     colnames = ['county_id', 'type', 'name', 'nuts3', 'area_sqare_km', 'pop_total',
                 'pop_male', 'pop_female', 'pop_per_square_km']
