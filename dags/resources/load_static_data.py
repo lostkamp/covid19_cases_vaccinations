@@ -26,7 +26,7 @@ def preprocess_county_data(filepath_in='static_data/04-kreise.xlsx',
                 'pop_male', 'pop_female', 'pop_per_square_km']
     counties = pd.read_excel(filepath_in, sheet_name=1, skiprows=6, header=None,
                              names=colnames)
-    counties = counties[counties['nuts3'].isna() is False]
+    counties = counties[counties['nuts3'].isna() == False]
     assert counties.isna().sum().sum() == 0
     counties = counties.astype({'pop_total': int,
                                 'pop_male': int,
@@ -34,3 +34,4 @@ def preprocess_county_data(filepath_in='static_data/04-kreise.xlsx',
                                 'pop_per_square_km': int})
     counties['state'] = counties['county_id'].apply(lambda s: s[:2]).map(state_dict)
     counties.to_csv(filepath_out, index=False)
+    return filepath_out
