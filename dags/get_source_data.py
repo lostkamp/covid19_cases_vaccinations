@@ -37,22 +37,22 @@ with DAG(dag_id='get_source_data_v2',
     date = '2021-07-24'
 
     get_case_url_task = PythonOperator(
-        task_id='get_case_url_task',
+        task_id='get_case_url',
         python_callable=get_case_datafile_url,
         op_kwargs={'date': date,
                    'repo_url': conf['repo_url_case']}
     )
     download_case_file_task = PythonOperator(
-        task_id='download_case_file_task',
+        task_id='download_case_file',
         python_callable=download_case_file
     )
     decompress_case_file_task = PythonOperator(
-        task_id='decompress_case_file_task',
+        task_id='decompress_case_file',
         python_callable=decompress_case_file,
         op_kwargs={'date': date}
     )
     upload_case_file_to_s3_task = PythonOperator(
-        task_id='upload_case_file_to_s3_task',
+        task_id='upload_case_file_to_s3',
         python_callable=upload_file_to_s3,
         op_kwargs={'s3_prefix': conf['s3_prefix_case'],
                    'bucket_name': conf['bucket_name']}
