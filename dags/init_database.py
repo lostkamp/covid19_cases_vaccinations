@@ -2,6 +2,7 @@ from datetime import datetime
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 from resources.load_static_data import preprocess_district_data
 from resources.download import upload_file_to_s3
@@ -37,6 +38,21 @@ with DAG(dag_id='init_database',
         op_kwargs={'s3_prefix': conf['s3_prefix_districts'],
                    'bucket_name': conf['bucket_name'],
                    'xcom_task_id': 'preprocess_district_data'}
+    )
+    create_districts_table = PostgresOperator(
+        task_id='create_districts_table',
+        sql='resources/queries/create_districts_table.sql',
+        postgres_conn_id='redshift'
+    )
+    create_staging_vaccinations_table = PostgresOperator(
+        task_id='create_staging_vaccinations_table',
+        sql='resources/queries/create_staging_vaccinations_table.sql',
+        postgres_conn_id='redshift'
+    )
+    create_staging_cases_table = PostgresOperator(
+        task_id='create_staging_cases_table',
+        sql='resources/queries/create_staging_cases_table.sql',
+        postgres_conn_id='redshift'
     )
 
 preprocess_district_data_task >> upload_district_file_to_s3_task
