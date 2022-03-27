@@ -101,7 +101,7 @@ with DAG(dag_id='get_source_data_v2',
     )
 
 
-get_case_url_task >> download_case_file_task >> decompress_case_file_task >> upload_case_file_to_s3_task
+get_case_url_task >> download_case_file_task >> decompress_case_file_task >> upload_case_file_to_s3_task  # NOQA
 download_vaccination_file_task >> upload_vaccination_file_to_s3_task
 
 upload_case_file_to_s3_task >> load_staging_cases_task
