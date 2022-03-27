@@ -4,6 +4,7 @@ from datetime import datetime
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
+from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 
 from resources.download import (get_case_datafile_url, download_case_file,
@@ -26,7 +27,7 @@ default_args = {
     'start_date': datetime(2022, 3, 1)
 }
 
-with DAG(dag_id='get_source_data_v2',
+with DAG(dag_id='get_source_data_v3',
          description='Download newest case and vaccination data and push it to Redshift',
          default_args=default_args,
          schedule_interval=None,
@@ -99,6 +100,16 @@ with DAG(dag_id='get_source_data_v2',
         copy_options=['IGNOREHEADER 1', "delimiter ','"],
         method='REPLACE',
     )
+    create_cases_table_task = PostgresOperator(
+        task_id='create_cases_table',
+        sql='resources/queries/create_cases_table.sql',
+        postgres_conn_id='redshift'
+    )
+    create_vaccinations_table_task = PostgresOperator(
+        task_id='create_vaccinations_table',
+        sql='resources/queries/create_vaccinations_table.sql',
+        postgres_conn_id='redshift'
+    )
 
 
 get_case_url_task >> download_case_file_task >> decompress_case_file_task >> upload_case_file_to_s3_task  # NOQA
@@ -106,3 +117,6 @@ download_vaccination_file_task >> upload_vaccination_file_to_s3_task
 
 upload_case_file_to_s3_task >> load_staging_cases_task
 upload_vaccination_file_to_s3_task >> load_staging_vaccinations_task
+
+load_staging_cases_task >> create_cases_table_task
+load_staging_vaccinations_task >> create_vaccinations_table_task
