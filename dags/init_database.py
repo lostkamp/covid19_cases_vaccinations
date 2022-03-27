@@ -3,12 +3,12 @@ from datetime import datetime
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-from resources.load_static_data import preprocess_county_data
+from resources.load_static_data import preprocess_district_data
 from resources.download import upload_file_to_s3
 
 conf = {
     'bucket_name': 'udacity-dend-capstone-lostkamp',
-    's3_prefix_counties': 'county_data'
+    's3_prefix_districts': 'district_data'
 }
 
 
@@ -27,16 +27,16 @@ with DAG(dag_id='init_database',
          concurrency=15,
          catchup=False) as dag:
 
-    preprocess_county_data_task = PythonOperator(
-        task_id='preprocess_county_data',
-        python_callable=preprocess_county_data
+    preprocess_district_data_task = PythonOperator(
+        task_id='preprocess_district_data',
+        python_callable=preprocess_district_data
     )
-    upload_county_file_to_s3_task = PythonOperator(
-        task_id='upload_county_file_to_s3',
+    upload_district_file_to_s3_task = PythonOperator(
+        task_id='upload_district_file_to_s3',
         python_callable=upload_file_to_s3,
-        op_kwargs={'s3_prefix': conf['s3_prefix_counties'],
+        op_kwargs={'s3_prefix': conf['s3_prefix_districts'],
                    'bucket_name': conf['bucket_name'],
-                   'xcom_task_id': 'preprocess_county_data'}
+                   'xcom_task_id': 'preprocess_district_data'}
     )
 
-preprocess_county_data_task >> upload_county_file_to_s3_task
+preprocess_district_data_task >> upload_district_file_to_s3_task
