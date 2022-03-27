@@ -33,7 +33,7 @@ def get_case_datafile_url(date: str, repo_url: str) -> str:
 
 
 def download_case_file(ti: TaskInstance) -> str:
-    url = ti.xcom_pull(task_ids='get_case_url_task')
+    url = ti.xcom_pull(task_ids='get_case_url')
     local_fname = os.path.split(url)[-1]
     logging.info(f'Downloading: {url}')
     logging.info(f'Local path: {os.path.join(os.getcwd(), local_fname)}')
@@ -44,7 +44,7 @@ def download_case_file(ti: TaskInstance) -> str:
 def decompress_case_file(ti: TaskInstance,
                          date: str,
                          delete_compressed_file: bool = True) -> str:
-    filename_in = ti.xcom_pull(task_ids='download_case_file_task')
+    filename_in = ti.xcom_pull(task_ids='download_case_file')
     filename_out = f'{date}.ndjson'
     with lzma.open(filename_in, 'rb') as fin, open(filename_out, 'wb') as fout:
         shutil.copyfileobj(fin, fout)

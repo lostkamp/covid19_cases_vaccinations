@@ -35,7 +35,7 @@ with DAG(dag_id='get_source_data_v3',
          concurrency=15,
          catchup=False) as dag:
 
-    date = '2021-07-24'
+    date = '2021-08-07'  # TODO: parametrize
 
     get_case_url_task = PythonOperator(
         task_id='get_case_url',
