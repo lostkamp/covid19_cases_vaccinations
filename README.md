@@ -71,7 +71,23 @@ So, you need to run `init_database` once before you can start running
 will take some time (depending on your internet connection).
 
 ## Other scenarios
-todo
+#### The data was increased by 100x.
+Since Redshift is a distributed databse, it is well suited for big data tasks.
+Redshift could be scaled out by increasing the number of nodes, as well as
+scaled up by increasing the computing power of a single node.
+
+The bottleneck of the data pipeline is the upload of the large case dataset
+to S3. If that dataset was increased x100, the pipeline would need to run on a
+machine with a high-speed network connection, e.g. a large EC2 instance on AWS.
+
+#### The pipelines would be run on a daily basis by 7 am every day.
+This is already taken into account. The main pipeline `get_source_data` is
+supposed to be scheduled daily. In order to run them at 7 a.m. you just need
+to adjust the `schedule_interval` setting to a cron expression.
+
+#### The database needed to be accessed by 100+ people.
+This is again no problem with Redshift. In case there are not enough resources
+to run queries by all the people, the cluster can be scaled easily.
 
 ## Improvements
 - unit tests
