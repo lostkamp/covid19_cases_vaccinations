@@ -21,15 +21,47 @@ data ready for further analysis.
 ## Steps taken
 todo
 
-## Data
+## Source data
 | Dataset          | Format | No. of rows     | Description                                                                                                        | Source                                                                                                                     |
 |------------------|--------|-----------------|--------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
 | Case data        | JSON   | ca. 4.5 million | Daily updated dataset containing all information (e.g. demographics) of every registered COVID-19 case for Germany | [RKI](https://github.com/ard-data/2020-rki-archive)                                                                        |
 | Vaccination data | CSV    | ca. 930,000     | Daily updated dataset cotaining the number of administered COVID-19 vaccinations                                   | [RKI](https://github.com/robert-koch-institut/COVID-19-Impfungen_in_Deutschland/)                                          |
 | District data    | XLSX   | 494             | Information for each district of Germany, e.g. the population and the state it belongs to.                         | [Destatis](https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/04-kreise.html) |
 
+## Data model
+
+![](doc/data_model.png "Diagram of the data model in Redshift")
+
 ## Data dictionary of the data model
-todo
+
+### Cases table
+| Column name           | Type | Description                                                                   |
+|-----------------------|------|-------------------------------------------------------------------------------|
+| date                  | date | Date when the case was reported                                               |
+| district_id           | int  | ID of the district                                                            |
+| num_cases             | int  | Number of cases for a specific date and district                              |
+| new_cases_last_7_days | int  | Rolling sum of the number of cases over the last seven days for each district |
+
+### Vaccinations table
+| Column name                  | Type | Description                                                                                                                            |
+|------------------------------|------|----------------------------------------------------------------------------------------------------------------------------------------|
+| vaccination_date             | date | Date of the vaccination                                                                                                                |
+| district_id                  | int  | ID of the district                                                                                                                     |
+| incomplete_vaccination_count | int  | Number of vaccinations that do not give full protection yet                                                                            |
+| complete_vaccination_count   | int  | Number of vaccinations that give full protection (i.e. one shot with the Johnson&Johnson vaccine, or two shots with any other vaccine. |
+| booster_vaccination_count    | int  | Number of booster shots on top of a completed series of vaccinations                                                                   |
+
+### District table
+| Column name              | Type  | Description                                |
+|--------------------------|-------|--------------------------------------------|
+| district_id              | int   | ID of the district                         |
+| type                     | text  | District type (e.g. city or "Landkreis")   |
+| name                     | text  | District name                              |
+| state                    | text  | Name of state that the district belongs to |
+| area_quare_km            | float | Area of district in square kilometers      |
+| population               | int   | Total population of the district           |
+| population_per_square_km | int   | Population per square kilometer            |
+
 
 ## Example queries
 
