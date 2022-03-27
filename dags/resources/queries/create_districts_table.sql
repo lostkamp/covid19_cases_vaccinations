@@ -1,7 +1,7 @@
 drop table if exists districts;
 
 create table districts (
-  district_id text,
+  district_id int,
   type text,
   name text,
   state text,
