@@ -58,7 +58,10 @@ def decompress_case_file(ti: TaskInstance,
 def upload_file_to_s3(ti: TaskInstance, s3_prefix: str, bucket_name: str,
                       xcom_task_id: str = None,
                       local_filename: str = None,
-                      delete_local_file: bool = True) -> None:
+                      delete_local_file: bool = True,
+                      dry_run: bool = False) -> None:
+    if dry_run:
+        logging.info('Dry-run mode. No files will be uploaded or deleted locally.')
     if xcom_task_id is None and local_filename is None:
         raise ValueError('Must specify either `xcom_task_id` or `local_filename`.')
     if local_filename is not None:
@@ -71,8 +74,10 @@ def upload_file_to_s3(ti: TaskInstance, s3_prefix: str, bucket_name: str,
     s3 = S3Hook(aws_conn_id='aws_credentials', region_name='eu-west-1')
     s3_key = os.path.join(s3_prefix, local_filename)
     logging.info(f'Uploading to S3 path: s3://{bucket_name}/{s3_key}')
-    s3.load_file(local_filename, key=s3_key, bucket_name=bucket_name, replace=True)
+    if not dry_run:
+        s3.load_file(local_filename, key=s3_key, bucket_name=bucket_name, replace=True)
     logging.info('Upload complete.')
     if delete_local_file:
         logging.info(f'Deleting local file: {os.path.join(os.getcwd(), local_filename)}')
-        Path(local_filename).unlink()
+        if not dry_run:
+            Path(local_filename).unlink()

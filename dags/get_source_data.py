@@ -57,7 +57,8 @@ with DAG(dag_id='get_source_data_v3',
         python_callable=upload_file_to_s3,
         op_kwargs={'s3_prefix': conf['s3_prefix_case'],
                    'bucket_name': conf['bucket_name'],
-                   'xcom_task_id': 'decompress_case_file'}
+                   'xcom_task_id': 'decompress_case_file',
+                   'dry_run': True}
     )
     filename = conf['filename_template_vaccinations'].format(DATE=date)
     download_vaccination_file_task = BashOperator(
