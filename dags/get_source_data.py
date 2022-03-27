@@ -11,8 +11,8 @@ from resources.download import (get_case_datafile_url, download_case_file,
 
 conf = {
     'repo_url_case': 'https://storage.googleapis.com/brdata-public-data/rki-corona-archiv/2_parsed/index.html',  # NOQA
-    'repo_url_vaccinations': 'https://github.com/robert-koch-institut/COVID-19-Impfungen_in_Deutschland/tree/master/Archiv/',
-    'filename_template_vaccinations': '{DATE}_Deutschland_Landkreise_COVID-19-Impfungen.csv',
+    'repo_url_vaccinations': 'https://raw.githubusercontent.com/robert-koch-institut/COVID-19-Impfungen_in_Deutschland/master/Archiv/',  # NOQA
+    'filename_template_vaccinations': '{DATE}_Deutschland_Landkreise_COVID-19-Impfungen.csv',  # NOQA
     'bucket_name': 'udacity-dend-capstone-lostkamp',
     's3_prefix_case': 'case_data',
     's3_prefix_vaccinations': 'vaccination_data'
@@ -67,7 +67,7 @@ with DAG(dag_id='get_source_data_v2',
         echo $LOCAL_FNAME;
         """,
         env={'FOLDER': os.getcwd(),
-             'URL': conf['repo_url_vaccinations'] + filename + '?raw=true',
+             'URL': conf['repo_url_vaccinations'] + filename,
              'LOCAL_FNAME': f'{date}.csv'}
     )
     upload_vaccination_file_to_s3_task = PythonOperator(
