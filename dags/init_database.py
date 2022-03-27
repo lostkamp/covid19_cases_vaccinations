@@ -3,6 +3,7 @@ from datetime import datetime
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 
 from resources.load_static_data import preprocess_district_data
 from resources.download import upload_file_to_s3
@@ -54,5 +55,17 @@ with DAG(dag_id='init_database',
         sql='resources/queries/create_staging_cases_table.sql',
         postgres_conn_id='redshift'
     )
+    load_district_data_task = S3ToRedshiftOperator(
+        task_id='load_district_data',
+        s3_bucket=conf['bucket_name'],
+        s3_key=f'{conf["s3_prefix_districts"]}/districts.csv',
+        redshift_conn_id='redshift',
+        aws_conn_id='aws_credentials',
+        schema='PUBLIC',
+        table='districts',
+        copy_options=['IGNOREHEADER 1', "delimiter ';'"],
+        method='REPLACE'
+    )
 
 preprocess_district_data_task >> upload_district_file_to_s3_task
+[create_districts_table, upload_district_file_to_s3_task] >> load_district_data_task
