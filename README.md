@@ -19,12 +19,26 @@ database. In Redshift, fact and dimension tables are created that provide the
 data ready for further analysis.
 
 ## Steps taken
-- explore data and check if it is possible to combine
-- check if datasets are publicly available and updated daily
-- design the dag
-- test with RDS -> switch to redshift
-- implement dag
-- add queries to get the data into the desired form of the data model (e.g. computing rolling sum of cases)
+#### Data exploration
+- Exploring the data and checking if it is possible to combine the two datasets
+- Checking that the data is available with the desired granularity (district
+level)
+- Checking that new versions of the datasets are published daily and that older
+versions are also accessible
+#### Designing the pipeline
+- Choosing Airflow for orchestration
+- Some testing with an RDS Postgres database first
+  - the data is small enough to fit into a single Postgres DB
+  - however, copying data from S3 is more complex and requires an intermediate
+  machine
+  - in case of Redshift, it's possible to load directly from S3 => choose
+  Redshift
+- Implement DAG using a local Airflow instance
+#### Data model
+- Coming up with SQL queries to get the data into the desired form of the data
+model (e.g. computing rolling sum of cases)
+- Experimenting with example queries to ensure that the data model can be used
+to answer relevant questions in the context of COVID-19.
 
 ## ETL pipeline
 The pipeline does the following:
