@@ -53,7 +53,7 @@ them to S3
 - Insert data into the `cases` and `vaccinations` table (old data is dropped)
 - Run data checks on all three tables
 
-**Why dropping and re-creating the table on every pipeline run?**
+#### Why dropping and re-creating the table on every pipeline run?
 Because each new dataset also contains corrections for previous days, and the
 logic of updating old records is very complex (e.g. for the vaccinations
 table, this consists of 11 different steps that have to applied in a certain
