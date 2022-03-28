@@ -19,7 +19,33 @@ database. In Redshift, fact and dimension tables are created that provide the
 data ready for further analysis.
 
 ## Steps taken
-todo
+- explore data and check if it is possible to combine
+- check if datasets are publicly available and updated daily
+- design the dag
+- test with RDS -> switch to redshift
+- implement dag
+- add queries to get the data into the desired form of the data model (e.g. computing rolling sum of cases)
+
+## ETL pipeline
+The pipeline does the following:
+- Create tables in Redshift, and transform and load the static districts data
+(one-time job)
+- Download newest case and vaccination datasets from public sources and upload
+them to S3
+- Load data from S3 to staging tables in Redshift
+- Aggregate the data to the desired level and compute some additional columns
+- Insert data into the `cases` and `vaccinations` table (old data is dropped)
+- Run data checks on all three tables
+
+**Why dropping and re-creating the table on every pipeline run?**
+Because each new dataset also contains corrections for previous days, and the
+logic of updating old records is very complex (e.g. for the vaccinations
+table, this consists of 11 different steps that have to applied in a certain
+sequence depending on the outcome of each step --
+[more info](https://github.com/robert-koch-institut/COVID-19-Impfungen_in_Deutschland/#regeln-zur-herstellung-inhaltlicher-konsistenz)).
+So it is much easier to re-create the tables, and the tasks still run only a
+few seconds.
+
 
 ## Source data
 | Dataset          | Format | No. of rows     | Description                                                                                                        | Source                                                                                                                     |
@@ -140,13 +166,17 @@ machine with a high-speed network connection, e.g. a large EC2 instance on AWS.
 #### The pipelines would be run on a daily basis by 7 am every day.
 This is already taken into account. The main pipeline `get_source_data` is
 supposed to be scheduled daily. In order to run them at 7 a.m. you just need
-to adjust the `schedule_interval` setting to a cron expression.
+to adjust the `schedule_interval` parameter to a cron expression.
 
 #### The database needed to be accessed by 100+ people.
 This is again no problem with Redshift. In case there are not enough resources
 to run queries by all the people, the cluster can be scaled easily.
 
-## Improvements
-- unit tests
-- atomic tasks
-- include age group
+## Future improvements
+- Add unit tests for the python functions
+- Merge the file download and upload tasks into one operator so that the
+pipeline can be run in distributed settings where the different operators do
+not share a filesystem (e.g. with a KubernetesExecutor)
+- Add more dimensions to the data, e.g. the age group (not straightforward
+because the cases dataset has a different division of age group than the
+vaccinations dataset).
