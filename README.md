@@ -25,6 +25,8 @@ data ready for further analysis.
 level)
 - Checking that new versions of the datasets are published daily and that older
 versions are also accessible
+- Getting population data on district level so that the cases and vaccinations
+can be normalized by population
 #### Designing the pipeline
 - Choosing Airflow for orchestration
 - Some testing with an RDS Postgres database first
