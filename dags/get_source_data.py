@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 
 from airflow import DAG
+from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
 from airflow.providers.postgres.operators.postgres import PostgresOperator
@@ -9,6 +10,8 @@ from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOp
 
 from resources.download import (get_case_datafile_url, download_case_file,
                                 decompress_case_file, upload_file_to_s3)
+from resources.data_checks import (check_districts_table, check_cases_table,
+                                   check_vaccinations_table)
 
 conf = {
     'repo_url_case': 'https://storage.googleapis.com/brdata-public-data/rki-corona-archiv/2_parsed/index.html',  # NOQA
@@ -111,6 +114,21 @@ with DAG(dag_id='get_source_data_v3',
         sql='resources/queries/create_vaccinations_table.sql',
         postgres_conn_id='redshift'
     )
+    start_data_checks_task = DummyOperator(
+        task_id='start_data_checks'
+    )
+    check_districts_table_task = PythonOperator(
+        task_id='check_districts_table',
+        python_callable=check_districts_table
+    )
+    check_cases_table_task = PythonOperator(
+        task_id='check_cases_table',
+        python_callable=check_cases_table
+    )
+    check_vaccinations_table_task = PythonOperator(
+        task_id='check_vaccinations_table',
+        python_callable=check_vaccinations_table
+    )
 
 
 get_case_url_task >> download_case_file_task >> decompress_case_file_task >> upload_case_file_to_s3_task  # NOQA
@@ -121,3 +139,7 @@ upload_vaccination_file_to_s3_task >> load_staging_vaccinations_task
 
 load_staging_cases_task >> create_cases_table_task
 load_staging_vaccinations_task >> create_vaccinations_table_task
+
+[create_cases_table_task, create_vaccinations_table_task] >> start_data_checks_task
+start_data_checks_task >> [check_districts_table_task, check_cases_table_task,
+                           check_vaccinations_table_task]
