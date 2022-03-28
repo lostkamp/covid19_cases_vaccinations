@@ -64,6 +64,31 @@ todo
 
 
 ## Example queries
+Once the data is loaded into Redshift, one can run some analytical queries:
+
+Compute the incidence per district (sum of new cases over the last 7 days
+per 100,000 population; this is a very common measure in Germany):
+```sql
+select c.*,
+       d.population,
+       (c.new_cases_last_7_days::float / d.population * 100000) as incidence
+from cases c
+left join districts d
+    on c.district_id = d.district_id
+order by date, district_id;
+```
+
+Compute the ratio of fully vaccinated people among the population per district:
+```sql
+select v.*,
+       d.population,
+       sum(complete_vaccination_count) over (partition by v.district_id order by v.vaccination_date asc
+           rows unbounded preceding) as complete_vaccination_cumulative,
+       complete_vaccination_cumulative::float / population as complete_vaccination_ratio
+from vaccinations v
+left join districts d
+    on v.district_id = d.district_id;
+```
 
 ## Running the pipeline
 ### Prerequisites
