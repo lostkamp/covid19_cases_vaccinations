@@ -74,6 +74,20 @@ few seconds.
 
 ![](doc/data_model.png "Diagram of the data model in Redshift")
 
+The schema of the data model is a start schema with 2 fact tables, `cases`
+and `vaccinations` that are updated daily, and one dimension table holding
+information about each district. The tables can be joined on `district_id`.
+
+Organizing the data this way means that it is very straightforward to compute
+measures on district level, because each table has the key `district_id`, so
+the district data can be joined with only one step.
+
+Advantages of the star schema:
+- It usually leads to simpler queries and less joins, as the dimension tables
+are organized around the central fact table(s)
+- It is widely used in OLAP databases, so one can assume that data analysts are
+familiar with it
+
 ## Data dictionary of the data model
 
 ### Cases table
@@ -119,6 +133,9 @@ left join districts d
     on c.district_id = d.district_id
 order by date, district_id;
 ```
+Output:
+![](doc/results_query1.png "Results of example query 1")
+
 
 Compute the ratio of fully vaccinated people among the population per district:
 ```sql
@@ -131,6 +148,8 @@ from vaccinations v
 left join districts d
     on v.district_id = d.district_id;
 ```
+Output:
+![](doc/results_query2.png "Results of example query 2")
 
 ## Running the pipeline
 ### Prerequisites
